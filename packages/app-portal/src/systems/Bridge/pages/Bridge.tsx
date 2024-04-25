@@ -35,6 +35,7 @@ export const Bridge = () => {
     toNetwork,
     assetAmount,
     assetBalance,
+    assetDecimals,
     asset,
     handlers,
   } = useBridge();
@@ -80,6 +81,10 @@ export const Bridge = () => {
             balance={assetBalance}
             value={assetAmount}
             color="green"
+            formatOpts={{
+              units: assetDecimals,
+              precision: assetDecimals,
+            }}
             onChange={(val) =>
               handlers.changeAssetAmount({ assetAmount: val || undefined })
             }

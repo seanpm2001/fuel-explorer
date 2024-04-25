@@ -105,23 +105,22 @@ export function useBridge() {
 
   const isDeposit = isFuelChain(toNetwork);
   const isWithdraw = isFuelChain(fromNetwork);
-  const assetBalance = useMemo(() => {
-    if (isEthChain(fromNetwork)) {
-      if (ethBalance) {
-        const [intPart, decimalPart] = ethBalance?.formatted?.split('.') || [];
-        const formattedUnits = `${intPart}.${
-          decimalPart?.slice(0, DECIMAL_UNITS) || '0'
-        }`;
-        return bn.parseUnits(formattedUnits);
-      }
+
+  const assetBalance = useMemo<BN>(() => {
+    if (isEthChain(fromNetwork) && ethBalance) {
+      return bn(ethBalance.value.toString());
     }
 
-    if (isFuelChain(fromNetwork)) {
-      return fuelBalance || bn(0);
+    if (isFuelChain(fromNetwork) && fuelBalance) {
+      return fuelBalance;
     }
 
     return bn(0);
   }, [ethBalance, fromNetwork, fuelBalance]);
+
+  const assetDecimals = useMemo<number>(() => {
+    return ethBalance?.decimals ?? DECIMAL_UNITS;
+  }, [ethBalance]);
 
   const status = store.useSelector(
     Services.bridge,
@@ -131,9 +130,6 @@ export function useBridge() {
   const router = useRouter();
   const params = useSearchParams();
 
-  // console.log(params);
-  // const location = useLocation();
-  // const queryParams = new URLSearchParams(location.search);
   // TODO: add "to" param when we add support to other chain than eth/fuel
   const fromInput = params.get('from');
 
@@ -196,6 +192,10 @@ export function useBridge() {
     return false;
   }
 
+  useEffect(() => {
+    console.log('balance', assetBalance.toString(), assetDecimals);
+  }, [assetBalance, assetDecimals]);
+
   return {
     handlers: {
       goToDeposit,
@@ -228,6 +228,7 @@ export function useBridge() {
     status,
     assetAmount,
     assetBalance,
+    assetDecimals,
     asset,
   };
 }
