@@ -1,5 +1,5 @@
 import type { Asset } from '@fuels/assets';
-import { DECIMAL_UNITS, bn, fromTai64ToUnix } from 'fuels';
+import { fromTai64ToUnix } from 'fuels';
 import type {
   Account as FuelAccount,
   Address as FuelAddress,
@@ -72,16 +72,10 @@ export class BridgeService {
     }
 
     if (isEthChain(fromNetwork) && isFuelChain(toNetwork)) {
-      const amountFormatted = assetAmount.format({
-        precision: DECIMAL_UNITS,
-        units: DECIMAL_UNITS,
-      });
-
       const assetEth = getAssetEth(asset);
       const assetFuel = getAssetFuel(asset);
-      const amountEthUnits = bn.parseUnits(amountFormatted, assetEth.decimals);
       const txId = await TxEthToFuelService.start({
-        amount: amountEthUnits.toHex(),
+        amount: assetAmount.toString(),
         ethWalletClient,
         fuelAddress,
         ethAssetAddress: assetEth.address,
@@ -109,6 +103,7 @@ export class BridgeService {
 
     if (isFuelChain(fromNetwork) && isEthChain(toNetwork)) {
       const fuelAsset = getAssetFuel(asset);
+
       const txId = await TxFuelToEthService.start({
         amount: assetAmount,
         fuelWallet,

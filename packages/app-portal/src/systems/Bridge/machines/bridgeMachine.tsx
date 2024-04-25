@@ -1,5 +1,4 @@
-import type { Asset } from '@fuels/assets';
-import type { BN } from 'fuels';
+import type { Asset, BN } from 'fuels';
 import type { InterpreterFrom, StateFrom } from 'xstate';
 import { assign, createMachine } from 'xstate';
 import type { FromToNetworks } from '~portal/systems/Chains';

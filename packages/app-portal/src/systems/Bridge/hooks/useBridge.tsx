@@ -119,8 +119,12 @@ export function useBridge() {
   }, [ethBalance, fromNetwork, fuelBalance]);
 
   const assetDecimals = useMemo<number>(() => {
-    return ethBalance?.decimals ?? DECIMAL_UNITS;
-  }, [ethBalance]);
+    if (isEthChain(fromNetwork) && ethBalance) {
+      return ethBalance.decimals;
+    }
+
+    return DECIMAL_UNITS;
+  }, [fromNetwork, ethBalance]);
 
   const status = store.useSelector(
     Services.bridge,
@@ -191,10 +195,6 @@ export function useBridge() {
 
     return false;
   }
-
-  useEffect(() => {
-    console.log('balance', assetBalance.toString(), assetDecimals);
-  }, [assetBalance, assetDecimals]);
 
   return {
     handlers: {
