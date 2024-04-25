@@ -1,6 +1,7 @@
+import type { Address } from 'viem';
 import { useAccount, useBalance } from 'wagmi';
 
-export function useEthBalance(token?: `0x${string}`) {
+export function useEthBalance(token?: Address) {
   const { address } = useAccount();
   const { data: ethBalance } = useBalance({
     address,
