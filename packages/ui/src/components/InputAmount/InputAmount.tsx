@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
-import { type BN, FormatConfig, bn, format } from '@fuel-ts/math';
+import { type BN, FormatConfig, bn } from '@fuel-ts/math';
 import { DECIMAL_UNITS, DEFAULT_MIN_PRECISION } from '@fuel-ts/math/configs';
 
 import { IconChevronDown } from '@tabler/icons-react';
@@ -24,6 +24,7 @@ import { createAmount } from './utils';
 export type InputAmountProps = Omit<InputProps, 'size' | 'onChange'> & {
   disabled?: boolean;
   balance?: BN;
+  formatOpts?: FormatConfig;
   value?: BN | null;
   onChange?: (val: BN | null) => void;
 };
@@ -39,13 +40,14 @@ export type InputAmountCoinSelectorProps = ButtonProps & {
 type Context = {
   disabled?: boolean;
   balance: BN;
+  formatOpts?: FormatConfig;
   assetAmount: string;
   handleAmountChange: (text: string) => void;
 };
 
 const ctx = createContext<Context>({} as Context);
 
-const formatOpts: FormatConfig = {
+const DEFAULT_FORMAT: FormatConfig = {
   units: DECIMAL_UNITS,
   precision: DECIMAL_UNITS,
 };
@@ -58,6 +60,7 @@ export const InputAmountRoot = createComponent<InputAmountProps, typeof Input>({
       className,
       value,
       balance: initialBalance,
+      formatOpts: initialFormatOpts,
       onChange,
       disabled,
       children,
@@ -65,6 +68,8 @@ export const InputAmountRoot = createComponent<InputAmountProps, typeof Input>({
     },
   ) => {
     const classes = styles();
+
+    const formatOpts = initialFormatOpts ?? DEFAULT_FORMAT;
     const [assetAmount, setAssetAmount] = useState<string>(
       !value || value.eq(0) ? '' : value.format(formatOpts),
     );
@@ -91,6 +96,7 @@ export const InputAmountRoot = createComponent<InputAmountProps, typeof Input>({
       <ctx.Provider
         value={{
           balance,
+          formatOpts,
           disabled,
           assetAmount,
           handleAmountChange,
@@ -111,7 +117,8 @@ export const InputAmountField = createComponent<
   id: 'InputAmountField',
   render: (_, props) => {
     const classes = styles();
-    const { disabled, assetAmount, handleAmountChange } = useContext(ctx);
+    const { formatOpts, disabled, assetAmount, handleAmountChange } =
+      useContext(ctx);
 
     return (
       <Input.Number
@@ -124,7 +131,7 @@ export const InputAmountField = createComponent<
         thousandSeparator={false}
         value={assetAmount}
         onChange={(e) => handleAmountChange(e.target.value)}
-        decimalScale={DECIMAL_UNITS}
+        decimalScale={formatOpts?.precision ?? DEFAULT_FORMAT.units}
         disabled={disabled}
         {...props}
       />
@@ -150,24 +157,32 @@ export const InputAmountBalance = createComponent<
 >({
   id: 'InputAmountBalance',
   render: (_, props) => {
-    const { balance } = useContext(ctx);
+    const { balance, formatOpts } = useContext(ctx);
 
-    const formattedBalance = useMemo<string>(() => {
+    const preview = useMemo<string>(() => {
       return balance.format({
-        ...formatOpts,
-        precision: balance.eq(0) ? 1 : DEFAULT_MIN_PRECISION,
+        units: formatOpts?.units ?? DEFAULT_FORMAT.units,
+        minPrecision: formatOpts?.minPrecision ?? DEFAULT_FORMAT.minPrecision,
+        precision: balance.isZero() ? 1 : DEFAULT_MIN_PRECISION,
+      });
+    }, [balance]);
+
+    const complete = useMemo<string>(() => {
+      return balance.format({
+        units: formatOpts?.units ?? DEFAULT_FORMAT.units,
+        precision: formatOpts?.precision ?? DEFAULT_FORMAT.precision,
       });
     }, [balance]);
 
     return (
       <Input.Slot {...props}>
-        <Tooltip content={format(balance, formatOpts)} sideOffset={-5}>
+        <Tooltip content={complete} sideOffset={-5}>
           <Text
             size="1"
             className="pb-3 self-start"
-            aria-label={`Balance: ${formattedBalance}`}
+            aria-label={`Balance: ${complete}`}
           >
-            Balance: {formattedBalance}
+            Balance: {preview}
           </Text>
         </Tooltip>
       </Input.Slot>
@@ -188,12 +203,13 @@ export const InputAmountButtonMaxBalance = createComponent<
   },
   render: (_, { className, children, ...props }) => {
     const classes = styles();
-    const { disabled, balance, handleAmountChange } = useContext(ctx);
+    const { disabled, balance, formatOpts, handleAmountChange } =
+      useContext(ctx);
 
     const mergedProps = mergeProps(props, {
       onClick: () => {
         if (balance) {
-          handleAmountChange(balance.format(formatOpts));
+          handleAmountChange(balance.format(formatOpts ?? DEFAULT_FORMAT));
         }
       },
     });
@@ -201,6 +217,7 @@ export const InputAmountButtonMaxBalance = createComponent<
     return (
       <Button
         aria-label="MAX"
+        type="button"
         {...mergedProps}
         className={classes.maxBalance({ className })}
         disabled={disabled}
