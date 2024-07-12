@@ -1,4 +1,5 @@
 import {
+  BurnerWalletConnector,
   FuelWalletConnector,
   FuelWalletDevelopmentConnector,
   FueletWalletConnector,
@@ -22,6 +23,7 @@ export function FuelConnectProvider({ children }: ProvidersProps) {
           new FuelWalletConnector(),
           new FueletWalletConnector(),
           new FuelWalletDevelopmentConnector(),
+          new BurnerWalletConnector(),
         ],
       }}
     >
